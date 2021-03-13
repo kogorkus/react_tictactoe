@@ -132,10 +132,13 @@ class Game extends React.Component {
 	}
 
 	handleClick(difficulty) {
+		let squares = this.state.squares.slice();
+		squares = Array(9).fill(null)
 		this.setState({
-			squares: Array(9).fill(null),
+			squares: squares,
 			botDifficulty: difficulty,
 		});
+		console.log(squares)
 	};
 
 	render() {
