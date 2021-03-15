@@ -190,11 +190,11 @@ class Game extends React.Component {
 					onClicks={(value) => this.handleClick(value)}
 				/>
 				<div className="left-panel">
-					<div className="left-panel-element"><i className="far fa-user far-lg"></i><i className="far fa-user far-lg"></i></div>
-					<div className="left-panel-element"><i className="far fa-user far-lg"></i><i className="fa fa-fw fa-desktop"></i></div>
-					<div className="left-panel-element"><i className="fa fa-fw fa-desktop"></i><i className="fa fa-fw fa-desktop"></i></div>
-					<div className="left-panel-element element-down"><i className="fa fa-palette"></i></div>
-					<div className="left-panel-element element-down"><i className="far fa-fw fa-chart-bar"></i></div>
+					<div className="left-panel-element"><i className="far fa-user far-lg"></i><span>{'vs'}</span><i className="far fa-user far-lg"></i></div>
+					<div className="left-panel-element"><i className="far fa-fw fa-user far-lg"></i><span>{'vs'}</span><i className="fa fa-fw fa-desktop"></i></div>
+					<div className="left-panel-element"><i className="fa  fa-desktop"></i><span>{'vs'}</span><i className="fa fa-desktop"></i></div>
+					<div className="left-panel-element"><i className="fa element-down fa-palette"></i></div>
+					<div className="left-panel-element"><i className="far element-down fa-fw fa-chart-bar"></i></div>
 
 				</div>
 
