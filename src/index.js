@@ -1,6 +1,14 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
+import '../node_modules/font-awesome/css/all.css';
+//import '../node_modules/font-awesome/css/font-awesome.min.css';
+import '../node_modules/font-awesome/webfonts/fa-regular-400.eot';
+import '../node_modules/font-awesome/css/regular.min.css';
+
+
+
+
 
 function Square(props) {
 	return (
@@ -12,70 +20,29 @@ function Square(props) {
 }
 
 class Board extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {
-			squares: this.props.squares,
-			xIsNext: true,
-			vsBot: true,
-		};
-	}
 
 	renderSquare(i) {
 		return (
 			<Square
-				value={this.state.squares[i]}
-				onClick={() => this.handleClick(i)}
+				value={this.props.squares[i]}
+				onClick={() => this.props.handleSquareClick(i)}
 			/>
 		);
 	}
 
-	handleClick(i) {
-		const squares = this.state.squares.slice();
-		if (calculateWinner(squares) || calculateTie(squares) || squares[i]) {
-			return;
-		}
-		if (!this.state.vsBot) {
-			squares[i] = this.state.xIsNext ? "X" : "O";
-			this.setState({
-				squares: squares,
-				xIsNext: !this.state.xIsNext,
-			});
-		}
-		else {
-			console.log(this.props.botDifficulty)
-			squares[i] = "X";
-			this.setState({
-				squares: squares,
-				xIsNext: !this.state.xIsNext,
-			});
-			let board = []
-			for (let i = 0; i < squares.length; i++)
-				if (squares[i] !== null) board[i] = squares[i];
-				else board[i] = i;
-			setTimeout(() => {
-				squares[minimax(board, 'O', this.props.botDifficulty).index] = 'O';
-				this.setState({
-					squares: squares,
-					xIsNext: !this.state.xIsNext,
-				});
-			}, 250);
-		}
-	}
-
 	render() {
-		const winer = calculateWinner(this.state.squares);
+		const winer = calculateWinner(this.props.squares);
 		let status;
 		let newGame;
 		if (winer) {
 			status = `${winer} win!`;
 			newGame = 'New game'
 		}
-		else if (calculateTie(this.state.squares)) {
+		else if (calculateTie(this.props.squares)) {
 			status = 'Tie!'
 			newGame = 'New game'
 		}
-		else status = `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
+		else status = `Next player: ${this.props.xIsNext ? 'X' : 'O'}`;
 
 		return (
 			<div className="game-field">
@@ -98,25 +65,58 @@ class Board extends React.Component {
 					</div>
 				</div>
 				<div className="new-game button" onClick={() => {
-					let squares = this.state.squares.slice();
-					squares = Array(9).fill(null)
-					this.setState({
-						squares: squares,
-						xIsNext: true,
-					});
+					this.props.restartGame()
 				}}>{newGame}</div>
 			</div>
 		);
 	}
 }
 
+function BotSettingButton(props) {
+	let className;
+	className = (props.active === props.name) ? "button active" : "button"
+	return (
+		<div className={className} onClick={() => props.onClick(props.name)}>
+			{props.name}
+		</div>
+	)
+}
+
 class BotSettings extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			active: 'Medium'
+		}
+	}
+
+	handleActiveChange(name) {
+		this.setState({
+			active: name,
+		});
+	}
+
+	renderBotSettingButton(difficulty, name) {
+		return (
+			<BotSettingButton
+				name={name}
+				onClick={(name) => {
+					this.props.onClicks(difficulty);
+					this.handleActiveChange(name);
+				}}
+				active={this.state.active}
+			/>
+		);
+	}
+
 	render() {
 		return (
 			<div className="bot-settings">
-				<div className="button" onClick={this.props.onClicks[0]}>{'Easy'}</div>
-				<div className="button" onClick={this.props.onClicks[1]}>{'Medium'}</div>
-				<div className="button" onClick={this.props.onClicks[2]}>{'Hard'}</div>
+				{this.renderBotSettingButton(60, 'Easy')}
+				{this.renderBotSettingButton(75, 'Medium')}
+				{this.renderBotSettingButton(90, 'Hard')}
+				{this.renderBotSettingButton(99, 'Impossible')}
+
 			</div>
 		);
 	}
@@ -126,36 +126,87 @@ class Game extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
+			xIsNext: true,
+			vsBot: true,
 			squares: Array(9).fill(null),
 			botDifficulty: 75,
 		};
 	}
 
 	handleClick(difficulty) {
+		this.restartGame()
+		this.setState({
+			botDifficulty: difficulty,
+		});
+	};
+
+	handleSquareClick(i) {
+		const squares = this.state.squares.slice();
+		if (calculateWinner(squares) || calculateTie(squares) || squares[i]) {
+			return;
+		}
+		if (!this.state.vsBot) {
+			squares[i] = this.state.xIsNext ? "X" : "O";
+			this.setState({
+				squares: squares,
+				xIsNext: !this.state.xIsNext,
+			});
+		}
+		else {
+			console.log(this.state.botDifficulty)
+			squares[i] = "X";
+			this.setState({
+				squares: squares,
+				xIsNext: !this.state.xIsNext,
+			});
+			let board = []
+			for (let i = 0; i < squares.length; i++)
+				if (squares[i] !== null) board[i] = squares[i];
+				else board[i] = i;
+			setTimeout(() => {
+				squares[minimax(board, 'O', this.state.botDifficulty).index] = 'O';
+				this.setState({
+					squares: squares,
+					xIsNext: !this.state.xIsNext,
+				});
+			}, 250);
+		}
+	}
+
+	restartGame() {
 		let squares = this.state.squares.slice();
 		squares = Array(9).fill(null)
 		this.setState({
+			xIsNext: true,
 			squares: squares,
-			botDifficulty: difficulty,
 		});
-		console.log(squares)
-	};
+	}
 
 	render() {
 		return (
 			<div className="game">
+
 				<BotSettings
-					onClicks={[() => this.handleClick(60), () => this.handleClick(75), () => this.handleClick(90)]}
+					onClicks={(value) => this.handleClick(value)}
 				/>
+				<div className="left-panel">
+					<div className="left-panel-element"><i className="far fa-user far-lg"></i><i className="far fa-user far-lg"></i></div>
+					<div className="left-panel-element"><i className="far fa-user far-lg"></i><i className="fa fa-fw fa-desktop"></i></div>
+					<div className="left-panel-element"><i className="fa fa-fw fa-desktop"></i><i className="fa fa-fw fa-desktop"></i></div>
+					<div className="left-panel-element element-down"><i className="fa fa-palette"></i></div>
+					<div className="left-panel-element element-down"><i className="far fa-fw fa-chart-bar"></i></div>
+
+				</div>
+
 				<div className="game-board">
 					<Board
 						botDifficulty={this.state.botDifficulty}
 						squares={this.state.squares}
+						handleSquareClick={(i) => this.handleSquareClick(i)}
+						xIsNext={this.state.xIsNext}
+						vsBot={this.state.vsBot}
+						restartGame={() => this.restartGame()}
 					/>
-				</div>
-				<div className="game-info">
-					<div>{/* status */}</div>
-					<ol>{/* TODO */}</ol>
 				</div>
 			</div>
 		);
@@ -231,9 +282,15 @@ function minimax(reboard, player, init) {
 		if (init !== undefined) {
 			let probabilityOfMistake = parseInt(Math.random() * 100)
 			console.log(probabilityOfMistake)
-			if (probabilityOfMistake >= init) moves.sort(function (a, b) { return a.score - b.score });
-			else moves.sort(function (a, b) { return b.score - a.score });
-			bestMoves = moves.filter(move => move.score === moves[0].score);
+			if (probabilityOfMistake >= init) bestMoves = moves;
+			// moves.sort(function (a, b) { return a.score - b.score });
+			// bestMoves = moves.filter(move => move.score === moves[0].score);
+
+			else {
+				moves.sort(function (a, b) { return b.score - a.score });
+				bestMoves = moves.filter(move => move.score === moves[0].score);
+			}
+			//bestMoves = moves.filter(move => move.score === moves[0].score);
 			console.log(moves)
 			console.log(bestMoves)
 			return bestMoves[parseInt(Math.random() * bestMoves.length)];
