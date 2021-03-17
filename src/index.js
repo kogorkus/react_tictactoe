@@ -2,7 +2,6 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
 import '../node_modules/font-awesome/css/all.css';
-//import '../node_modules/font-awesome/css/font-awesome.min.css';
 import '../node_modules/font-awesome/webfonts/fa-regular-400.eot';
 import '../node_modules/font-awesome/css/regular.min.css';
 
@@ -37,10 +36,6 @@ class Board extends React.Component {
 		if (winer) {
 			status = `${winer} win!`;
 			newGame = (this.props.gameMode === 'eve') ? 'Next round' : 'New game';
-		}
-		else if (this.props.gameMode === 'eve' && JSON.stringify(this.props.squares) === JSON.stringify(Array(9).fill(null))) {
-			status = `Press New game`;
-			newGame = 'New game';
 		}
 		else if (calculateTie(this.props.squares)) {
 			status = 'Tie!'
@@ -114,8 +109,13 @@ class BotSettings extends React.Component {
 	}
 
 	render() {
+		let classOrient;
+		if (this.props.gameMode === 'pvp') return null;
+		else if (this.props.gameMode === 'pve' && this.props.orientation === 'left') classOrient = this.props.orientation + " bot-settings";
+		else if (this.props.gameMode === 'eve') classOrient = this.props.orientation + " bot-settings";
+		else return null;
 		return (
-			<div className="bot-settings">
+			<div className={classOrient}>
 				{this.renderBotSettingButton(60, 'Easy')}
 				{this.renderBotSettingButton(75, 'Medium')}
 				{this.renderBotSettingButton(90, 'Hard')}
@@ -130,29 +130,41 @@ class Game extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {
+			gameID: parseInt(Math.random() * 1000000),
 			xIsNext: true,
 			gameMode: 'pvp',
 			squares: Array(9).fill(null),
 			botDifficulty: 75,
+			botDifficultySecond: 75,
+			gameModesActive: ['left-panel-element active', 'left-panel-element', 'left-panel-element'],
 		};
 	}
 
-	handleClickDifficulty(difficulty) {
-		this.restartGame()
-		this.setState({
+	handleClickDifficulty(difficulty, botID) {
+		if (botID === "bot1") this.setState({
 			botDifficulty: difficulty,
-		});
+		}, () => { this.restartGame() });
+		else this.setState({
+			botDifficultySecond: difficulty,
+		}, () => { this.restartGame() });
 	};
 
 	handleClickGameMode(gameMode) {
-		this.restartGame()
+		let gameModesActive = Array(3).fill('left-panel-element')
+		if (gameMode === 'pvp') gameModesActive[0] += ' active';
+		if (gameMode === 'pve') gameModesActive[1] += ' active';
+		if (gameMode === 'eve') gameModesActive[2] += ' active';
+
 		this.setState({
+			gameModesActive: gameModesActive,
 			gameMode: gameMode,
-		});
+			xIsNext: true,
+		}, () => { this.restartGame() });
 	};
 
 	handleSquareClick(i) {
 		const squares = this.state.squares.slice();
+
 		if (calculateWinner(squares) || calculateTie(squares) || squares[i] || this.state.gameMode === 'eve') {
 			return;
 		}
@@ -164,66 +176,86 @@ class Game extends React.Component {
 			});
 		}
 		else if (this.state.gameMode === 'pve') {
-			console.log(this.state.botDifficulty)
 			squares[i] = this.state.xIsNext ? "X" : "O";
 			this.setState({
 				squares: squares,
 				xIsNext: !this.state.xIsNext,
-			});
-
-			this.botsTurn(squares).then((squares) => {
-				this.setState({
-					squares: squares,
-					xIsNext: !this.state.xIsNext,
+			}, () => {
+				this.botsTurn(squares).then((squares) => {
+					if (squares === undefined) return;
+					this.setState({
+						squares: squares,
+						xIsNext: !this.state.xIsNext,
+					})
 				})
-			})
-
+			});
 		}
 	}
 
 	async botsTurn(squares) {
+		console.log(squares + "")
 		let location;
 		let board = [];
-		let player = this.state.xIsNext ? 'O' : 'X'
+		let player = !this.state.xIsNext ? 'O' : 'X'
 		for (let i = 0; i < squares.length; i++)
 			if (squares[i] !== null) board[i] = squares[i];
 			else board[i] = i;
 
-		let promise = new Promise((resolve, reject) => {
+		let promise = new Promise((resolve) => {
 			setTimeout(() => {
 				resolve(minimax(board, player, this.state.botDifficulty).index);
 			}, 250)
 		});
 
 		location = await promise;
-		squares[location] = player;
-		return squares;
+		if (location === undefined) return undefined;
+		else {
+			squares[location] = player;
+			return squares;
+		}
 	}
 
 	restartGame() {
 		let squares = this.state.squares.slice();
 		squares = Array(9).fill(null)
 		this.setState({
-			xIsNext: true,
+			gameID: parseInt(Math.random() * 1000000),
 			squares: squares,
-		});
-		if (this.state.gameMode === 'eve') {
-			while (squares.find(square => square === null) === null) {
-				this.botsTurn(squares)
-			}
-		}
+		}, () => { if (this.state.gameMode === 'eve') this.botVsBot(this.state.gameID) });
+
+	}
+
+	botVsBot(gameID) {
+		let squares = this.state.squares.slice();
+		if (this.state.gameMode === 'eve')
+			this.botsTurn(squares).then((squares) => {
+				if (gameID !== this.state.gameID) return;
+				if (squares === undefined) return;
+				this.setState({
+					squares: squares,
+					xIsNext: !this.state.xIsNext,
+				}, () => { this.botVsBot(gameID); });
+			});
 	}
 
 	render() {
+		console.log(this.state.gameID)
 		return (
 			<div className="game">
+				{<BotSettings
+					onClicks={(value) => this.handleClickDifficulty(value, "bot2")}
+					orientation={'right'}
+					gameMode={this.state.gameMode}
+				/>}
 				<div className="left-panel">
 					<BotSettings
-						onClicks={(value) => this.handleClickDifficulty(value)}
+						onClicks={(value) => this.handleClickDifficulty(value, "bot1")}
+						orientation={'left'}
+						gameMode={this.state.gameMode}
 					/>
-					<div className="left-panel-element" onClick={() => this.handleClickGameMode('pvp')}><i className="far fa-user far-lg"></i><span>{'vs'}</span><i className="far fa-user far-lg"></i></div>
-					<div className="left-panel-element" onClick={() => this.handleClickGameMode('pve')}><i className="far fa-fw fa-user far-lg"></i><span>{'vs'}</span><i className="fa fa-fw fa-desktop"></i></div>
-					<div className="left-panel-element" onClick={() => this.handleClickGameMode('eve')}><i className="fa  fa-desktop"></i><span>{'vs'}</span><i className="fa fa-desktop"></i></div>
+					<div className={this.state.gameModesActive[0]} onClick={() => this.handleClickGameMode('pvp')}><i className="far fa-user far-lg"></i><span>{'vs'}</span><i className="far fa-user far-lg"></i></div>
+					<div className={this.state.gameModesActive[1]} onClick={() => this.handleClickGameMode('pve')}><i className="far fa-fw fa-user far-lg"></i><span>{'vs'}</span><i className="fa fa-fw fa-desktop"></i></div>
+					<div className={this.state.gameModesActive[2]} onClick={() => { this.handleClickGameMode('eve') }}><i className="fa  fa-desktop"></i><span>{'vs'}</span><i className="fa fa-desktop"></i></div>
 					<div className="left-panel-element"><i className="fa element-down fa-palette"></i></div>
 					<div className="left-panel-element"><i className="far element-down fa-fw fa-chart-bar"></i></div>
 				</div>
@@ -243,6 +275,7 @@ class Game extends React.Component {
 }
 
 function calculateWinner(squares) {
+	if (squares === undefined) return null;
 	const lines = [
 		[0, 1, 2],
 		[3, 4, 5],
@@ -310,15 +343,11 @@ function minimax(reboard, player, init) {
 		}
 		if (init !== undefined) {
 			let probabilityOfMistake = parseInt(Math.random() * 100)
-			console.log(probabilityOfMistake)
 			if (probabilityOfMistake >= init) bestMoves = moves;
 			else {
 				moves.sort(function (a, b) { return b.score - a.score });
 				bestMoves = moves.filter(move => move.score === moves[0].score);
 			}
-			console.log(player)
-			console.log(moves)
-			console.log(bestMoves)
 			return bestMoves[parseInt(Math.random() * bestMoves.length)];
 
 		}

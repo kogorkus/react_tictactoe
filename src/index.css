@@ -88,6 +88,10 @@ button {
     background-color: #7215A9;
 }
 
+.button {
+    padding: 0 10px 0 10px;
+}
+
 .new-game {
     position: absolute;
     left: 50%;
@@ -106,18 +110,29 @@ button {
 
 .bot-settings {
     background-color: transparent;
-    padding-left: 30px;
-    margin-left: 120px;
     z-index: 1;
     position: fixed;
-    left: 1;
     top: 0;
+}
+
+.left {
+    padding-left: 30px;
+    margin-left: 120px;
+    left: 1;
+}
+
+.right {
+    text-align: right;
+    right: 30px;
+    float: right;
 }
 
 .active {
     background-color: rgba(255, 255, 255, 0.207);
     border-radius: 15px;
+    padding: 5px;
     width: fit-content;
+    float: inherit;
 }
 
 .left-panel {
@@ -138,6 +153,7 @@ button {
 }
 
 .left-panel-element {
+    float: inherit;
     padding: 5px 0 5px 0;
     cursor: pointer;
     margin-top: 50px;
