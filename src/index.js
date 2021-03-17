@@ -170,30 +170,34 @@ class Game extends React.Component {
 				squares: squares,
 				xIsNext: !this.state.xIsNext,
 			});
-			// this.botsTurn(squares).then((squares) => {
-			// 	console.log(squares)
-			// 	this.setState({
-			// 		squares: squares,
-			// 		xIsNext: !this.state.xIsNext,
-			// 	});
-			// })
-			this.botsTurn(squares).then(console.log('hui'))
+
+			this.botsTurn(squares).then((squares) => {
+				this.setState({
+					squares: squares,
+					xIsNext: !this.state.xIsNext,
+				})
+			})
 
 		}
 	}
 
 	async botsTurn(squares) {
-		let board = []
+		let location;
+		let board = [];
 		let player = this.state.xIsNext ? 'O' : 'X'
 		for (let i = 0; i < squares.length; i++)
 			if (squares[i] !== null) board[i] = squares[i];
 			else board[i] = i;
 
-		setTimeout(() => {
-			squares[minimax(board, player, this.state.botDifficulty).index] = player;
-			console.log(squares)
-			return squares;
-		}, 250);
+		let promise = new Promise((resolve, reject) => {
+			setTimeout(() => {
+				resolve(minimax(board, player, this.state.botDifficulty).index);
+			}, 250)
+		});
+
+		location = await promise;
+		squares[location] = player;
+		return squares;
 	}
 
 	restartGame() {
