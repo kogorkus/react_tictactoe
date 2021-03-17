@@ -170,13 +170,19 @@ class Game extends React.Component {
 				squares: squares,
 				xIsNext: !this.state.xIsNext,
 			});
-
-			this.botsTurn(squares)
+			// this.botsTurn(squares).then((squares) => {
+			// 	console.log(squares)
+			// 	this.setState({
+			// 		squares: squares,
+			// 		xIsNext: !this.state.xIsNext,
+			// 	});
+			// })
+			this.botsTurn(squares).then(console.log('hui'))
 
 		}
 	}
 
-	botsTurn(squares) {
+	async botsTurn(squares) {
 		let board = []
 		let player = this.state.xIsNext ? 'O' : 'X'
 		for (let i = 0; i < squares.length; i++)
@@ -185,10 +191,8 @@ class Game extends React.Component {
 
 		setTimeout(() => {
 			squares[minimax(board, player, this.state.botDifficulty).index] = player;
-			this.setState({
-				squares: squares,
-				xIsNext: !this.state.xIsNext,
-			});
+			console.log(squares)
+			return squares;
 		}, 250);
 	}
 
