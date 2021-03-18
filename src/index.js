@@ -132,6 +132,7 @@ class Game extends React.Component {
 		this.state = {
 			gameID: parseInt(Math.random() * 1000000),
 			xIsNext: true,
+			xIsFirst: true,
 			gameMode: 'pvp',
 			squares: Array(9).fill(null),
 			botDifficulty: 75,
@@ -203,7 +204,7 @@ class Game extends React.Component {
 
 		let promise = new Promise((resolve) => {
 			setTimeout(() => {
-				resolve(minimax(board, player, this.state.botDifficulty).index);
+				resolve(minimax(board, player, player === 'O' ? this.state.botDifficulty : this.state.botDifficultySecond, player).index);
 			}, 250)
 		});
 
@@ -219,9 +220,19 @@ class Game extends React.Component {
 		let squares = this.state.squares.slice();
 		squares = Array(9).fill(null)
 		this.setState({
+			xIsFirst: !this.state.xIsFirst,
+			xIsNext: !this.state.xIsFirst,
 			gameID: parseInt(Math.random() * 1000000),
 			squares: squares,
-		}, () => { if (this.state.gameMode === 'eve') this.botVsBot(this.state.gameID) });
+		}, () => {
+			if (this.state.gameMode === 'eve') this.botVsBot(this.state.gameID);
+			else if (this.state.gameMode === 'pve' && !this.state.xIsFirst) this.botsTurn(squares).then((squares) => {
+				this.setState({
+					squares: squares,
+					xIsNext: !this.state.xIsNext,
+				});
+			});;
+		});
 
 	}
 
@@ -239,7 +250,6 @@ class Game extends React.Component {
 	}
 
 	render() {
-		console.log(this.state.gameID)
 		return (
 			<div className="game">
 				{<BotSettings
@@ -254,7 +264,7 @@ class Game extends React.Component {
 						gameMode={this.state.gameMode}
 					/>
 					<div className={this.state.gameModesActive[0]} onClick={() => this.handleClickGameMode('pvp')}><i className="far fa-user far-lg"></i><span>{'vs'}</span><i className="far fa-user far-lg"></i></div>
-					<div className={this.state.gameModesActive[1]} onClick={() => this.handleClickGameMode('pve')}><i className="far fa-fw fa-user far-lg"></i><span>{'vs'}</span><i className="fa fa-fw fa-desktop"></i></div>
+					<div className={this.state.gameModesActive[1]} onClick={() => this.handleClickGameMode('pve')}><i className="far fa-fw fa-user far-lg"></i><span id="cntr-span">{'vs'}</span><i className="fa fa-fw fa-desktop"></i></div>
 					<div className={this.state.gameModesActive[2]} onClick={() => { this.handleClickGameMode('eve') }}><i className="fa  fa-desktop"></i><span>{'vs'}</span><i className="fa fa-desktop"></i></div>
 					<div className="left-panel-element"><i className="fa element-down fa-palette"></i></div>
 					<div className="left-panel-element"><i className="far element-down fa-fw fa-chart-bar"></i></div>
@@ -306,11 +316,14 @@ function getAvailableMoves(squares) {
 	return availableMoves;
 }
 
-function minimax(reboard, player, init) {
-
+function minimax(reboard, player, difficulty, initiator) {
+	let opponent;
+	if (initiator !== undefined) {
+		opponent = initiator === 'X' ? 'O' : 'X';
+	}
 	let availableMoves = getAvailableMoves(reboard);
-	if (calculateWinner(reboard) === 'X') return { score: -10 };
-	else if (calculateWinner(reboard) === 'O') return { score: 10 };
+	if (calculateWinner(reboard) === opponent) return { score: -10 };
+	else if (calculateWinner(reboard) === initiator) return { score: 10 };
 	else if (availableMoves.length === 0) return { score: 0 };
 
 
@@ -321,10 +334,10 @@ function minimax(reboard, player, init) {
 		reboard[availableMoves[i]] = player;
 
 		if (player === 'O') {
-			let g = minimax(reboard, 'X');
+			let g = minimax(reboard, 'X', undefined, initiator);
 			move.score = g.score;
 		} else {
-			let g = minimax(reboard, 'O');
+			let g = minimax(reboard, 'O', undefined, initiator);
 			move.score = g.score;
 		}
 		reboard[availableMoves[i]] = move.index;
@@ -333,7 +346,8 @@ function minimax(reboard, player, init) {
 
 	let bestMove;
 	let bestMoves;
-	if (player === 'O') {
+	if (player === initiator) {
+
 		let bestScore = -10000;
 		for (let i = 0; i < moves.length; i++) {
 			if (moves[i].score > bestScore) {
@@ -341,13 +355,16 @@ function minimax(reboard, player, init) {
 				bestMove = i;
 			}
 		}
-		if (init !== undefined) {
+		if (difficulty !== undefined) {
 			let probabilityOfMistake = parseInt(Math.random() * 100)
-			if (probabilityOfMistake >= init) bestMoves = moves;
+			if (probabilityOfMistake >= difficulty) bestMoves = moves;
 			else {
 				moves.sort(function (a, b) { return b.score - a.score });
 				bestMoves = moves.filter(move => move.score === moves[0].score);
 			}
+			console.log(initiator + " " + difficulty + " " + probabilityOfMistake);
+			console.log(moves);
+			console.log(bestMoves);
 			return bestMoves[parseInt(Math.random() * bestMoves.length)];
 
 		}
