@@ -29,6 +29,18 @@ ol, ul {
     margin-left: 10px;
 }
 
+.score {
+    margin: 20px;
+    text-align: center;
+    font-size: 60px;
+    padding-right: 15px;
+}
+
+.score-values {
+    margin-left: 40px;
+    margin-right: 40px;
+}
+
 .square {
     color: #ffffff;
     text-shadow: 0 0 2px #ffffff, 0 0 4px #ffffff, 0 0 8px #ffffff;

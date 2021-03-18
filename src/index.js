@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
+
 import "./index.css";
 import '../node_modules/font-awesome/css/all.css';
 import '../node_modules/font-awesome/webfonts/fa-regular-400.eot';
@@ -146,16 +147,30 @@ class Game extends React.Component {
 			squares: Array(9).fill(null),
 			botDifficulty: 75,
 			botDifficultySecond: 75,
+			score: { 'X': 0, 'O': 0 },
 			gameModesActive: ['left-panel-element active', 'left-panel-element', 'left-panel-element'],
 		};
+	}
+
+	checkWiner() {
+		const winer = calculateWinner(this.state.squares).player;
+		if (winer) {
+			let score = this.state.score;
+			score[winer]++;
+			this.setState({
+				score: score,
+			});
+		}
 	}
 
 	handleClickDifficulty(difficulty, botID) {
 		if (botID === "bot1") this.setState({
 			botDifficulty: difficulty,
+			score: { 'X': 0, 'O': 0 },
 		}, () => { this.restartGame() });
 		else this.setState({
 			botDifficultySecond: difficulty,
+			score: { 'X': 0, 'O': 0 },
 		}, () => { this.restartGame() });
 	};
 
@@ -169,6 +184,7 @@ class Game extends React.Component {
 			gameModesActive: gameModesActive,
 			gameMode: gameMode,
 			xIsNext: true,
+			score: { 'X': 0, 'O': 0 },
 		}, () => { this.restartGame() });
 	};
 
@@ -183,7 +199,7 @@ class Game extends React.Component {
 			this.setState({
 				squares: squares,
 				xIsNext: !this.state.xIsNext,
-			});
+			}, () => { this.checkWiner() });
 		}
 		else if (this.state.gameMode === 'pve') {
 			squares[i] = this.state.xIsNext ? "X" : "O";
@@ -191,12 +207,13 @@ class Game extends React.Component {
 				squares: squares,
 				xIsNext: !this.state.xIsNext,
 			}, () => {
+				this.checkWiner();
 				this.botsTurn(squares).then((squares) => {
 					if (squares === undefined) return;
 					this.setState({
 						squares: squares,
 						xIsNext: !this.state.xIsNext,
-					})
+					}, () => { this.checkWiner() });
 				})
 			});
 		}
@@ -214,7 +231,7 @@ class Game extends React.Component {
 		let promise = new Promise((resolve) => {
 			setTimeout(() => {
 				resolve(minimax(board, player, player === 'O' ? this.state.botDifficulty : this.state.botDifficultySecond, player).index);
-			}, 250)
+			}, this.state.gameMode === 'pve' ? 250 : 750)
 		});
 
 		location = await promise;
@@ -254,11 +271,12 @@ class Game extends React.Component {
 				this.setState({
 					squares: squares,
 					xIsNext: !this.state.xIsNext,
-				}, () => { this.botVsBot(gameID); });
+				}, () => { this.botVsBot(gameID); this.checkWiner(); });
 			});
 	}
 
 	render() {
+
 		return (
 			<div className="game">
 				{<BotSettings
@@ -279,6 +297,7 @@ class Game extends React.Component {
 					<div className="left-panel-element"><i className="far element-down fa-fw fa-chart-bar"></i></div>
 				</div>
 				<div className="game-board">
+					<div className="score"><span className='symbol'>{'O'}</span><span className="score-values">{this.state.score['O'] + ":" + this.state.score['X']}</span><span className='symbol'>{'X'}</span></div>
 					<Board
 						botDifficulty={this.state.botDifficulty}
 						squares={this.state.squares}
@@ -286,6 +305,7 @@ class Game extends React.Component {
 						xIsNext={this.state.xIsNext}
 						gameMode={this.state.gameMode}
 						restartGame={() => this.restartGame()}
+					//handleWiner={(winer) => { this.handleWiner(winer) }}
 					/>
 				</div>
 			</div>
