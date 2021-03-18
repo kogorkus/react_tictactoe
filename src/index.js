@@ -8,8 +8,6 @@ import '../node_modules/font-awesome/css/regular.min.css';
 
 
 
-
-
 function Square(props) {
 	let className = props.isWinerSquare ? "square winer" : "square"
 	return (
@@ -147,30 +145,69 @@ class Game extends React.Component {
 			squares: Array(9).fill(null),
 			botDifficulty: 75,
 			botDifficultySecond: 75,
-			score: { 'X': 0, 'O': 0 },
+			score: { 'X': 0, 'O': 0, tie: 0, },
 			gameModesActive: ['left-panel-element active', 'left-panel-element', 'left-panel-element'],
 		};
 	}
 
-	checkWiner() {
+	async checkWiner(isHuman) {
 		const winer = calculateWinner(this.state.squares).player;
-		if (winer) {
+		const tie = calculateTie(this.state.squares)
+		if (winer || tie) {
 			let score = this.state.score;
-			score[winer]++;
+			if (winer) {
+				score[winer]++;
+			}
+			if (tie) {
+				score.tie++;
+			}
 			this.setState({
 				score: score,
 			});
+			console.log(score);
+
+			let winerInfo;
+			let loserInfo;
+
+			if (isHuman) winerInfo = 'player';
+			else if (this.state.xIsNext) winerInfo = 'bot' + this.state.botDifficulty;
+			else winerInfo = 'bot' + this.state.botDifficultySecond;
+
+			if (this.state.gameMode === 'pvp') loserInfo = 'player'
+			else if (this.state.gameMode === 'pve' && isHuman) loserInfo = 'bot' + this.state.botDifficulty;
+			else loserInfo = 'bot' + !this.state.xIsNext ? this.state.botDifficulty : this.state.botDifficultySecond;
+
+			console.log(winerInfo);
+			console.log(loserInfo);
+			let dataObjectToSend = {
+				winer: winerInfo,
+				loser: loserInfo,
+				count: score[winer],
+				tie: score.tie,
+				symbol: this.state.xIsNext ? 'O' : 'X',
+
+			};
+			let response = await fetch('./php/file.php', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json;charset=utf-8'
+				},
+				body: dataObjectToSend,
+			});
+
+			let result = await response.json();
+			console.log(result.message);
 		}
 	}
 
 	handleClickDifficulty(difficulty, botID) {
 		if (botID === "bot1") this.setState({
 			botDifficulty: difficulty,
-			score: { 'X': 0, 'O': 0 },
+			score: { 'X': 0, 'O': 0, tie: 0 },
 		}, () => { this.restartGame() });
 		else this.setState({
 			botDifficultySecond: difficulty,
-			score: { 'X': 0, 'O': 0 },
+			score: { 'X': 0, 'O': 0, tie: 0 },
 		}, () => { this.restartGame() });
 	};
 
@@ -184,7 +221,7 @@ class Game extends React.Component {
 			gameModesActive: gameModesActive,
 			gameMode: gameMode,
 			xIsNext: true,
-			score: { 'X': 0, 'O': 0 },
+			score: { 'X': 0, 'O': 0, tie: 0 },
 		}, () => { this.restartGame() });
 	};
 
@@ -199,7 +236,7 @@ class Game extends React.Component {
 			this.setState({
 				squares: squares,
 				xIsNext: !this.state.xIsNext,
-			}, () => { this.checkWiner() });
+			}, () => { this.checkWiner(true) });
 		}
 		else if (this.state.gameMode === 'pve') {
 			squares[i] = this.state.xIsNext ? "X" : "O";
@@ -207,13 +244,13 @@ class Game extends React.Component {
 				squares: squares,
 				xIsNext: !this.state.xIsNext,
 			}, () => {
-				this.checkWiner();
+				this.checkWiner(true);
 				this.botsTurn(squares).then((squares) => {
 					if (squares === undefined) return;
 					this.setState({
 						squares: squares,
 						xIsNext: !this.state.xIsNext,
-					}, () => { this.checkWiner() });
+					}, () => { this.checkWiner(false) });
 				})
 			});
 		}
@@ -271,12 +308,11 @@ class Game extends React.Component {
 				this.setState({
 					squares: squares,
 					xIsNext: !this.state.xIsNext,
-				}, () => { this.botVsBot(gameID); this.checkWiner(); });
+				}, () => { this.botVsBot(gameID); this.checkWiner(false); });
 			});
 	}
 
 	render() {
-
 		return (
 			<div className="game">
 				{<BotSettings
