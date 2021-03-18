@@ -10,8 +10,9 @@ import '../node_modules/font-awesome/css/regular.min.css';
 
 
 function Square(props) {
+	let className = props.isWinerSquare ? "square winer" : "square"
 	return (
-		<button className="square" onClick={props.onClick}>
+		<button className={className} onClick={props.onClick}>
 			{props.value}
 		</button>
 	);
@@ -19,18 +20,40 @@ function Square(props) {
 }
 
 class Board extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			winSquares: [],
+		};
+	}
 
-	renderSquare(i) {
+	renderSquare(i, isWinerSquare) {
 		return (
 			<Square
 				value={this.props.squares[i]}
 				onClick={() => this.props.handleSquareClick(i)}
+				isWinerSquare={isWinerSquare}
 			/>
 		);
 	}
 
 	render() {
-		const winer = calculateWinner(this.props.squares);
+		const winer = calculateWinner(this.props.squares).player;
+		const winerLine = calculateWinner(this.props.squares).line;
+		const squareLines = []
+		let index = 0
+		for (let i = 0; i < 3; i++) {
+			const squaresInLine = []
+			for (let j = 0; j < 3; j++) {
+				let isWinerSquare = false;
+				if (winerLine)
+					if (winerLine.includes(index)) isWinerSquare = true;
+				squaresInLine.push(this.renderSquare(index, isWinerSquare));
+				index++;
+			}
+			squareLines.push(<div className="board-row">{squaresInLine}</div>);
+		}
+
 		let status;
 		let newGame;
 		if (winer) {
@@ -47,21 +70,7 @@ class Board extends React.Component {
 			<div className="game-field">
 				<div className="game-cells">
 					<div className="status">{status}</div>
-					<div className="board-row">
-						{this.renderSquare(0)}
-						{this.renderSquare(1)}
-						{this.renderSquare(2)}
-					</div>
-					<div className="board-row">
-						{this.renderSquare(3)}
-						{this.renderSquare(4)}
-						{this.renderSquare(5)}
-					</div>
-					<div className="board-row">
-						{this.renderSquare(6)}
-						{this.renderSquare(7)}
-						{this.renderSquare(8)}
-					</div>
+					{squareLines}
 				</div>
 				<div className="new-game button" onClick={() => {
 					this.props.restartGame()
@@ -166,7 +175,7 @@ class Game extends React.Component {
 	handleSquareClick(i) {
 		const squares = this.state.squares.slice();
 
-		if (calculateWinner(squares) || calculateTie(squares) || squares[i] || this.state.gameMode === 'eve') {
+		if (calculateWinner(squares).player || calculateTie(squares) || squares[i] || this.state.gameMode === 'eve') {
 			return;
 		}
 		if (this.state.gameMode === 'pvp') {
@@ -299,10 +308,10 @@ function calculateWinner(squares) {
 	for (let i = 0; i < lines.length; i++) {
 		const [a, b, c] = lines[i];
 		if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-			return squares[a];
+			return { player: squares[a], line: lines[i] };
 		}
 	}
-	return null;
+	return { player: null, line: null };
 }
 
 function calculateTie(squares) {
@@ -322,8 +331,8 @@ function minimax(reboard, player, difficulty, initiator) {
 		opponent = initiator === 'X' ? 'O' : 'X';
 	}
 	let availableMoves = getAvailableMoves(reboard);
-	if (calculateWinner(reboard) === opponent) return { score: -10 };
-	else if (calculateWinner(reboard) === initiator) return { score: 10 };
+	if (calculateWinner(reboard).player === opponent) return { score: -10 };
+	else if (calculateWinner(reboard).player === initiator) return { score: 10 };
 	else if (availableMoves.length === 0) return { score: 0 };
 
 

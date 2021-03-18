@@ -45,6 +45,10 @@ ol, ul {
     width: 134px;
 }
 
+.winer {
+    color: #2bf1ff;
+}
+
 .square:focus {
     outline: none;
 }
@@ -141,9 +145,7 @@ button {
     z-index: 2;
     left: 0;
     height: 100%;
-    width: 110px;
-    padding-right: 10px;
-    padding-left: 10px;
+    width: 130px;
     box-shadow: 0 0 5px #ffffff, 0 0 10px #ffffff, 0 0 20px #ffffff;
     transition: width 1s, height 1s, background-color 1s, transform 1s;
 }
@@ -153,13 +155,20 @@ button {
 }
 
 .left-panel-element {
+    margin-left: 10px;
+    margin-right: 10px;
+    width: 110px;
     float: inherit;
     padding: 5px 0 5px 0;
     cursor: pointer;
     margin-top: 50px;
     text-align: center;
     font-size: 25px;
-    width: 100%;
+}
+
+.left-panel-element.active {
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
 
 .left-panel-element span {
@@ -204,4 +213,8 @@ button {
 
 .element-down:hover {
     font-size: 40px;
+}
+
+#cntr-span {
+    margin-left: -7px;
 }
