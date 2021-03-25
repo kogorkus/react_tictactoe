@@ -7,6 +7,9 @@ import '../node_modules/font-awesome/webfonts/fa-regular-400.eot';
 import '../node_modules/font-awesome/css/regular.min.css';
 
 
+class Statistics extends React.Component {
+
+}
 
 function Square(props) {
 	let className = props.isWinerSquare ? "square winer" : "square"
@@ -122,6 +125,7 @@ class BotSettings extends React.Component {
 		else if (this.props.gameMode === 'pve' && this.props.orientation === 'left') classOrient = this.props.orientation + " bot-settings";
 		else if (this.props.gameMode === 'eve') classOrient = this.props.orientation + " bot-settings";
 		else return null;
+
 		return (
 			<div className={classOrient}>
 				{this.renderBotSettingButton(60, 'Easy')}
@@ -155,44 +159,36 @@ class Game extends React.Component {
 		const tie = calculateTie(this.state.squares)
 		if (winer || tie) {
 			let score = this.state.score;
-			if (winer) {
-				score[winer]++;
-			}
-			if (tie) {
-				score.tie++;
-			}
-			this.setState({
-				score: score,
-			});
-			console.log(score);
+			if (winer) score[winer]++;
+			if (tie) score.tie++;
 
+			this.setState({ score: score, });
+			console.log(score);
 			let winerInfo;
 			let loserInfo;
 
 			if (isHuman) winerInfo = 'player';
-			else if (this.state.xIsNext) winerInfo = 'bot' + this.state.botDifficulty;
-			else winerInfo = 'bot' + this.state.botDifficultySecond;
+			else if (this.state.xIsNext) winerInfo = this.state.botDifficulty;
+			else winerInfo = this.state.botDifficultySecond;
 
-			if (this.state.gameMode === 'pvp') loserInfo = 'player'
-			else if (this.state.gameMode === 'pve' && isHuman) loserInfo = 'bot' + this.state.botDifficulty;
-			else loserInfo = 'bot' + !this.state.xIsNext ? this.state.botDifficulty : this.state.botDifficultySecond;
-
+			if (this.state.gameMode === 'pvp' || (this.state.gameMode === 'pve' && !isHuman)) loserInfo = 'player'
+			else if (this.state.gameMode === 'pve' && isHuman) loserInfo = this.state.botDifficulty;
+			else loserInfo = !this.state.xIsNext ? this.state.botDifficulty : this.state.botDifficultySecond;
 			console.log(winerInfo);
 			console.log(loserInfo);
 			let dataObjectToSend = {
-				winer: winerInfo,
-				loser: loserInfo,
-				count: score[winer],
-				tie: score.tie,
-				symbol: this.state.xIsNext ? 'O' : 'X',
-
+				"winer": winerInfo,
+				"loser": loserInfo,
+				"count": winer ? 1 : 0,
+				"tie": tie ? 1 : 0,
+				"symbol": this.state.xIsNext ? 'O' : 'X',
 			};
 			let response = await fetch('./php/file.php', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json;charset=utf-8'
 				},
-				body: dataObjectToSend,
+				body: JSON.stringify(dataObjectToSend),
 			});
 
 			let result = await response.json();
@@ -228,7 +224,7 @@ class Game extends React.Component {
 	handleSquareClick(i) {
 		const squares = this.state.squares.slice();
 
-		if (calculateWinner(squares).player || calculateTie(squares) || squares[i] || this.state.gameMode === 'eve') {
+		if (calculateWinner(squares).player || calculateTie(squares) || squares[i] || this.state.gameMode === 'eve' || (this.state.gameMode === 'pve' && !this.state.xIsNext)) {
 			return;
 		}
 		if (this.state.gameMode === 'pvp') {
@@ -268,7 +264,7 @@ class Game extends React.Component {
 		let promise = new Promise((resolve) => {
 			setTimeout(() => {
 				resolve(minimax(board, player, player === 'O' ? this.state.botDifficulty : this.state.botDifficultySecond, player).index);
-			}, this.state.gameMode === 'pve' ? 250 : 750)
+			}, this.state.gameMode === 'pve' ? 250 : 700)
 		});
 
 		location = await promise;
@@ -316,13 +312,13 @@ class Game extends React.Component {
 		return (
 			<div className="game">
 				{<BotSettings
-					onClicks={(value) => this.handleClickDifficulty(value, "bot2")}
+					onClicks={(difficulty) => this.handleClickDifficulty(difficulty, "bot2")}
 					orientation={'right'}
 					gameMode={this.state.gameMode}
 				/>}
 				<div className="left-panel">
 					<BotSettings
-						onClicks={(value) => this.handleClickDifficulty(value, "bot1")}
+						onClicks={(difficulty) => this.handleClickDifficulty(difficulty, "bot1")}
 						orientation={'left'}
 						gameMode={this.state.gameMode}
 					/>
@@ -341,7 +337,6 @@ class Game extends React.Component {
 						xIsNext={this.state.xIsNext}
 						gameMode={this.state.gameMode}
 						restartGame={() => this.restartGame()}
-					//handleWiner={(winer) => { this.handleWiner(winer) }}
 					/>
 				</div>
 			</div>
