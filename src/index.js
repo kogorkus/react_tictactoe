@@ -2,14 +2,38 @@ import React from "react";
 import ReactDOM from "react-dom";
 
 import "./index.css";
-import '../node_modules/font-awesome/css/all.css';
-import '../node_modules/font-awesome/webfonts/fa-regular-400.eot';
-import '../node_modules/font-awesome/css/regular.min.css';
+import '../node_modules/font-awesome/css/font-awesome.css';
+import '../node_modules/line-awesome/dist/font-awesome-line-awesome/webfonts/fa-regular-400.eot';
+import '../node_modules/font-awesome/css/font-awesome.min.css';
 
 
-class Statistics extends React.Component {
+/* class Statistics extends React.Component {
 
-}
+	async getData() {
+		let response = await fetch('./php/file.php', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json;charset=utf-8'
+			},
+			body: JSON.stringify(dataObjectToSend),
+		});
+
+		let result = await response.json();
+		console.log(result.message);
+	}
+
+	renderStatPage() {
+		return (
+			<div className="statistics"></div>
+		);
+	}
+
+	render() {
+		return (
+			this.renderStatPage()
+		);
+	};
+} */
 
 function Square(props) {
 	let className = props.isWinerSquare ? "square winer" : "square"
@@ -170,7 +194,7 @@ class Game extends React.Component {
 			if (isHuman) winerInfo = 'player';
 			else if (this.state.xIsNext) winerInfo = this.state.botDifficulty;
 			else winerInfo = this.state.botDifficultySecond;
-
+			
 			if (this.state.gameMode === 'pvp' || (this.state.gameMode === 'pve' && !isHuman)) loserInfo = 'player'
 			else if (this.state.gameMode === 'pve' && isHuman) loserInfo = this.state.botDifficulty;
 			else loserInfo = !this.state.xIsNext ? this.state.botDifficulty : this.state.botDifficultySecond;
